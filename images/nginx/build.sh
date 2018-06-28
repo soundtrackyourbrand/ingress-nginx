@@ -74,7 +74,6 @@ clean-install \
   zlib1g-dev \
   libaio1 \
   libaio-dev \
-  openssl \
   libperl-dev \
   cmake \
   util-linux \
@@ -82,7 +81,6 @@ clean-install \
   lmdb-utils \
   libjemalloc1 libjemalloc-dev \
   wget \
-  libcurl4-openssl-dev \
   procps \
   git g++ pkgconf flex bison doxygen libyajl-dev liblmdb-dev libtool dh-autoreconf libxml2 libpcre++-dev libxml2-dev \
   lua-cjson \
@@ -220,6 +218,11 @@ get_src 1897d7677d99c1cedeb95b2eb00652a4a7e8e604304c3053a93bd3ba7dd82884 \
 get_src ebb4652c4f9a2e1ee31fddefc4c93ff78e651a4b2727d3453d026bccbd708d99 \
         "https://github.com/leev/ngx_http_geoip2_module/archive/${GEOIP2_VERSION}.tar.gz"
 
+get_src ec3f5c9714ba0fd45cb4e087301eb1336c317e0d20b575a125050470e8089e4d \
+        "https://www.openssl.org/source/openssl-1.0.2o.tar.gz"
+
+get_src e9c37986337743f37fd14fe8737f246e97aec94b39d1b71e8a5973f72a9fc4f5 \
+        "https://curl.haxx.se/download/curl-7.60.0.tar.gz"
 
 # improve compilation times
 CORES=$(($(grep -c ^processor /proc/cpuinfo) - 0))
@@ -274,6 +277,21 @@ if [[ (${ARCH} != "ppc64le") && (${ARCH} != "s390x") ]]; then
   # build and install lua-resty-waf with dependencies
   /install_lua_resty_waf.sh
 fi
+
+# build openssl
+cd "$BUILD_PATH/openssl-1.0.2o"
+./config --prefix=/usr/lib/ssl --openssldir=/usr/lib/ssl enable-ssl2 enable-ssl3
+make depend
+make
+make -i install
+rm -rf /usr/bin/openssl
+ln -s /usr/lib/ssl/bin/openssl /usr/bin/openssl
+
+# build curl and libcurl
+cd "$BUILD_PATH/curl-7.60.0"
+./configure --with-ssl
+make
+make install
 
 # build opentracing lib
 cd "$BUILD_PATH/opentracing-cpp-$OPENTRACING_CPP_VERSION"
@@ -393,7 +411,8 @@ WITH_FLAGS="--with-debug \
   --with-stream_ssl_module \
   --with-stream_ssl_preread_module \
   --with-threads \
-  --with-http_secure_link_module"
+  --with-http_secure_link_module \
+  --with-openssl=$BUILD_PATH/openssl-1.0.2o"
 
 if [[ ${ARCH} != "armv7l" || ${ARCH} != "aarch64" ]]; then
   WITH_FLAGS+=" --with-file-aio"
@@ -467,8 +486,7 @@ apt-mark unmarkauto \
   xz-utils \
   geoip-bin \
   libyajl2 liblmdb0 libxml2 libpcre++ \
-  gzip \
-  openssl
+  gzip
 
 apt-get remove -y --purge \
   build-essential \
