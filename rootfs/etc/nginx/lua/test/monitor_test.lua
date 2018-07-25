@@ -1,25 +1,5 @@
-package.path = "./rootfs/etc/nginx/lua/?.lua;./rootfs/etc/nginx/lua/test/mocks/?.lua;" .. package.path
 _G._TEST = true
-local cjson = require('cjson')
-
-local function udp_mock()
-    return {
-        setpeername = function(...) return true end,
-        send = function(payload) return payload end,
-        close = function(...) return true end
-    }
-end
-
-local _ngx = {
-    shared = {},
-    log = function(...) end,
-    socket = {
-        udp = udp_mock
-    },
-    get_phase = function() return "timer" end,
-    var = {}
-}
-_G.ngx = _ngx
+local cjson = require("cjson")
 
 describe("Monitor", function()
     local monitor = require("monitor")
@@ -33,10 +13,12 @@ describe("Monitor", function()
                 request_method = "GET",
                 location_path = "/admin",
                 request_length = "300",
-                request_time = "60",
+                request_time = "210",
                 proxy_upstream_name = "test-upstream",
                 upstream_addr = "2.2.2.2",
                 upstream_response_time = "200",
+                upstream_response_length = "150",
+                upstream_connect_time = "1",
                 upstream_status = "220",
                 namespace = "test-app-production",
                 ingress_name = "web-yml",
@@ -51,16 +33,16 @@ describe("Monitor", function()
             local expected_json_stats = {
                 host = "testshop.com",
                 status = "200",
-                bytesSent = 150.0,
-                protocol = "HTTP",
+                responseLength = 150.0,
                 method = "GET",
                 path = "/admin",
                 requestLength = 300.0,
-                requestTime = 60.0,
-                upstreamName = "test-upstream",
-                upstreamIP = "2.2.2.2",
+                requestTime = 210.0,
+                endpoint = "2.2.2.2",
                 upstreamResponseTime = 200,
                 upstreamStatus = "220",
+                upstreamLatency = 1.0,
+                upstreamResponseLength = 150.0,
                 namespace = "test-app-production",
                 ingress = "web-yml",
                 service = "test-app",
@@ -77,10 +59,10 @@ describe("Monitor", function()
                 server_protocol = "HTTP",
                 request_method = "GET",
                 location_path = "/admin",
-                request_time = "60",
+                request_time = "202",
                 proxy_upstream_name = "test-upstream",
                 upstream_addr = "2.2.2.2",
-                upstream_response_time = "200",
+                upstream_response_time = "201",
                 upstream_status = "220",
                 ingress_name = "web-yml",
             }
@@ -93,18 +75,19 @@ describe("Monitor", function()
             local expected_json_stats = {
                 host = "-",
                 status = "-",
-                bytesSent = -1,
-                protocol = "HTTP",
+                responseLength = -1,
                 method = "GET",
                 path = "/admin",
                 requestLength = -1,
-                requestTime = 60.0,
-                upstreamName = "test-upstream",
-                upstreamIP = "2.2.2.2",
-                upstreamResponseTime = 200,
+                requestTime = 202.0,
+                endpoint = "2.2.2.2",
                 upstreamStatus = "220",
                 namespace = "-",
                 ingress = "web-yml",
+                upstreamLatency = -1,
+                upstreamResponseTime = 201,
+                upstreamResponseLength = -1,
+                responseLength = -1,
                 service = "-",
             }
             assert.are.same(decoded_json_stats,expected_json_stats)
