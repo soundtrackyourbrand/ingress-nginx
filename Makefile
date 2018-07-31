@@ -159,6 +159,7 @@ build: clean
 
 	mkdir -p $(TEMP_DIR)/rootfs
 	cp bin/$(ARCH)/nginx-ingress-controller $(TEMP_DIR)/rootfs/nginx-ingress-controller
+	cp $(TEMP_DIR)/rootfs/nginx-ingress-controller ./rootfs/
 
 .PHONY: static-check
 static-check:

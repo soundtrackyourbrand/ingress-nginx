@@ -25,6 +25,8 @@ RUN clean-install \
 
 COPY . /
 
+RUN ls -la /
+
 ENTRYPOINT ["/entrypoint.sh"]
 
 CMD ["/nginx-ingress-controller"]
